@@ -1,5 +1,4 @@
 use crate::config::manager::ConfigManager;
-use crate::provider::detector::ProviderDetector;
 use anyhow::Result;
 use colored::*;
 use std::io::{self, Write};

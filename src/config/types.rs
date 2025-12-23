@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -34,7 +34,7 @@ pub struct BackupConfig {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Provider {
     Anthropic,
-    ZAI,
+    GLM,
     Custom,
     Unknown,
 }
@@ -43,7 +43,7 @@ impl Provider {
     pub fn as_str(&self) -> &'static str {
         match self {
             Provider::Anthropic => "anthropic",
-            Provider::ZAI => "z_ai",
+            Provider::GLM => "glm",
             Provider::Custom => "custom",
             Provider::Unknown => "unknown",
         }
@@ -52,7 +52,7 @@ impl Provider {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
-    ZAI,
+    GLM,
     Anthropic,
     Unknown,
 }

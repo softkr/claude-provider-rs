@@ -10,11 +10,14 @@ impl ProviderDetector {
         }
 
         let empty_string = String::new();
-        let base_url = config.env.get("ANTHROPIC_BASE_URL").unwrap_or(&empty_string);
+        let base_url = config
+            .env
+            .get("ANTHROPIC_BASE_URL")
+            .unwrap_or(&empty_string);
 
-        // Z.AI detection
+        // GLM detection
         if base_url.contains("z.ai") {
-            return Provider::ZAI;
+            return Provider::GLM;
         }
 
         // If no custom base URL, it's Anthropic (default)
@@ -30,17 +33,18 @@ impl ProviderDetector {
         Self::detect_provider(config) == Provider::Anthropic
     }
 
-    pub fn is_zai_config(config: &Config) -> bool {
-        Self::detect_provider(config) == Provider::ZAI
+    pub fn is_glm_config(config: &Config) -> bool {
+        Self::detect_provider(config) == Provider::GLM
     }
 
-    pub fn is_zai_key(key: &str) -> bool {
-        matches!(key,
-            "ANTHROPIC_BASE_URL" |
-            "API_TIMEOUT_MS" |
-            "ANTHROPIC_DEFAULT_OPUS_MODEL" |
-            "ANTHROPIC_DEFAULT_SONNET_MODEL" |
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL"
+    pub fn is_glm_key(key: &str) -> bool {
+        matches!(
+            key,
+            "ANTHROPIC_BASE_URL"
+                | "API_TIMEOUT_MS"
+                | "ANTHROPIC_DEFAULT_OPUS_MODEL"
+                | "ANTHROPIC_DEFAULT_SONNET_MODEL"
+                | "ANTHROPIC_DEFAULT_HAIKU_MODEL"
         )
     }
 
@@ -49,9 +53,9 @@ impl ProviderDetector {
             return TokenType::Unknown;
         }
 
-        // Z.AI API keys typically start with specific prefixes
-        if token.starts_with("sk-") || token.starts_with("z_ai-") {
-            return TokenType::ZAI;
+        // GLM API keys typically start with specific prefixes
+        if token.starts_with("sk-") || token.starts_with("glm-") {
+            return TokenType::GLM;
         }
 
         // Anthropic tokens are longer JWT-like tokens
@@ -66,7 +70,7 @@ impl ProviderDetector {
 
         // Short tokens without special prefixes might be API keys
         if token.len() < 100 {
-            return TokenType::ZAI;
+            return TokenType::GLM;
         }
 
         TokenType::Unknown
@@ -76,15 +80,21 @@ impl ProviderDetector {
         let token_type = Self::detect_token_type(token);
 
         match provider {
-            Provider::ZAI => {
+            Provider::GLM => {
                 if token_type == TokenType::Anthropic {
-                    eprintln!("{}", "⚠️  Warning: Token looks like an Anthropic token".yellow());
-                    eprintln!("{}", "   Z.AI typically uses API keys (sk-xxx or z_ai-xxx format)".yellow());
+                    eprintln!(
+                        "{}",
+                        "⚠️  Warning: Token looks like an Anthropic token".yellow()
+                    );
+                    eprintln!(
+                        "{}",
+                        "   GLM typically uses API keys (sk-xxx or glm-xxx format)".yellow()
+                    );
                     return true; // Still allow, just warn
                 }
             }
             Provider::Anthropic => {
-                if token_type == TokenType::ZAI {
+                if token_type == TokenType::GLM {
                     eprintln!("{}", "⚠️  Warning: Token looks like an API key".yellow());
                     eprintln!("{}", "   Anthropic uses longer JWT-style tokens".yellow());
                     return true; // Still allow, just warn

@@ -1,20 +1,22 @@
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 use colored::*;
 
 mod config;
 mod provider;
 mod utils;
 
-use config::{ConfigManager, Provider};
-use provider::{AnthropicSwitcher, ZAISwitcher, StatusDisplay};
-use utils::{TokenManager, Installer};
+use config::ConfigManager;
+use provider::{AnthropicSwitcher, GLMSwitcher, StatusDisplay};
+use utils::{Installer, TokenManager};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser)]
 #[command(name = "claude-switch")]
-#[command(about = "Claude Code API Switcher - Switch between different API providers for Claude Code")]
+#[command(
+    about = "Claude Code API Switcher - Switch between different API providers for Claude Code"
+)]
 #[command(version = VERSION)]
 struct Cli {
     #[command(subcommand)]
@@ -26,13 +28,13 @@ enum Commands {
     /// Switch to Anthropic API (restore configuration)
     #[command(alias = "a")]
     Anthropic,
-    /// Switch to Z.AI API (use API key)
-    #[command(alias = "z")]
-    ZAI,
+    /// Switch to GLM API (use API key)
+    #[command(alias = "g")]
+    GLM,
     /// Show current configuration
     #[command(alias = "s")]
     Status,
-    /// Remove saved Z_AI API token
+    /// Remove saved GLM API token
     ClearToken,
     /// Install aliases to shell
     Install,
@@ -51,27 +53,33 @@ fn print_usage() {
     println!();
     println!("{}", "Commands:".cyan());
     println!("  -a, --anthropic  Switch to Anthropic API (restore configuration)");
-    println!("  -z, --z_ai       Switch to Z.AI API (use API key)");
+    println!("  -g, --glm        Switch to GLM API (use API key)");
     println!("  -s, --status     Show current configuration");
-    println!("  --clear-token    Remove saved Z_AI API token");
+    println!("  --clear-token    Remove saved GLM API token");
     println!("  --install        Install aliases to shell");
     println!("  -v, --version    Show version");
     println!("  -h, --help       Show this help message");
     println!();
     println!("{}", "Authentication:".cyan());
     println!("  Anthropic  Uses default configuration (automatically backed up)");
-    println!("  Z.AI       Uses API key (prompted or from Z_AI_AUTH_TOKEN env)");
+    println!("  GLM        Uses API key (prompted or from GLM_AUTH_TOKEN env)");
     println!();
     println!("{}", "Environment Variables:".cyan());
-    println!("  Z_AI_AUTH_TOKEN  Z.AI API key (optional)");
+    println!("  GLM_AUTH_TOKEN  GLM API key (optional)");
     println!();
     println!("{}", "Examples:".cyan());
-    println!("  claude-switch --z_ai       # Backup Anthropic config, switch to Z.AI");
+    println!("  claude-switch --glm        # Backup Anthropic config, switch to GLM");
     println!("  claude-switch --anthropic  # Restore Anthropic config from backup");
     println!("  claude-switch --status     # Check current provider");
     println!();
-    println!("{}", "Note: Switching to Z.AI automatically backs up your Anthropic".yellow());
-    println!("      {}", "configuration. Use --anthropic to restore it later.".yellow());
+    println!(
+        "{}",
+        "Note: Switching to GLM automatically backs up your Anthropic".yellow()
+    );
+    println!(
+        "      {}",
+        "configuration. Use --anthropic to restore it later.".yellow()
+    );
     println!();
 }
 
@@ -97,9 +105,9 @@ fn main() -> Result<()> {
                 std::process::exit(1);
             }
         }
-        Some(Commands::ZAI) => {
-            let switcher = ZAISwitcher::new(config_manager);
-            if let Err(e) = switcher.switch_to_zai() {
+        Some(Commands::GLM) => {
+            let switcher = GLMSwitcher::new(config_manager);
+            if let Err(e) = switcher.switch_to_glm() {
                 eprintln!("{}{}", "Error: ".red(), e);
                 std::process::exit(1);
             }

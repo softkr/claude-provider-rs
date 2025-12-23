@@ -1,6 +1,6 @@
+use crate::config::manager::ConfigManager;
 use crate::config::{Config, Provider};
 use crate::provider::detector::ProviderDetector;
-use crate::config::manager::ConfigManager;
 use anyhow::Result;
 use colored::*;
 
@@ -20,15 +20,22 @@ impl StatusDisplay {
         let config = self.config_manager.load_current_config()?;
 
         if config.env.is_empty() {
-            println!("{}", "⚠️  No configuration found (empty or missing)".yellow());
+            println!(
+                "{}",
+                "⚠️  No configuration found (empty or missing)".yellow()
+            );
             return Ok(());
         }
 
-        let base_url = config.env.get("ANTHROPIC_BASE_URL").cloned().unwrap_or_default();
+        let base_url = config
+            .env
+            .get("ANTHROPIC_BASE_URL")
+            .cloned()
+            .unwrap_or_default();
         let provider = ProviderDetector::detect_provider(&config);
 
         match provider {
-            Provider::ZAI => self.show_zai_status(&config, &base_url),
+            Provider::GLM => self.show_glm_status(&config, &base_url),
             Provider::Anthropic => self.show_anthropic_status(&config),
             Provider::Custom => self.show_custom_status(&config, &base_url),
             Provider::Unknown => self.show_unknown_status(),
@@ -48,9 +55,9 @@ impl StatusDisplay {
         Ok(())
     }
 
-    fn show_zai_status(&self, config: &Config, base_url: &str) {
+    fn show_glm_status(&self, config: &Config, base_url: &str) {
         println!("{}", "┌─────────────────────────────────────┐".green());
-        println!("{}", "│  🔗 Provider: Z.AI (GLM Models)     │".green());
+        println!("{}", "│  🔗 Provider: GLM (Z.AI Models)      │".green());
         println!("{}", "└─────────────────────────────────────┘".green());
         println!();
         println!("  {}{}", "Base URL: ".cyan(), base_url);
@@ -73,15 +80,20 @@ impl StatusDisplay {
             let masked_token = ProviderDetector::mask_token(token);
             let token_type = ProviderDetector::detect_token_type(token);
             let token_type_str = match token_type {
-                crate::config::TokenType::ZAI => " (API key)",
-                crate::config::TokenType::Anthropic => " (web token - unexpected for Z.AI)",
+                crate::config::TokenType::GLM => " (API key)",
+                crate::config::TokenType::Anthropic => " (web token - unexpected for GLM)",
                 crate::config::TokenType::Unknown => "",
             };
-            println!("  {}{}{}", "Auth Token: ".cyan(), masked_token, token_type_str);
+            println!(
+                "  {}{}{}",
+                "Auth Token: ".cyan(),
+                masked_token,
+                token_type_str
+            );
         }
     }
 
-    fn show_anthropic_status(&self, config: &Config) {
+    fn show_anthropic_status(&self, _config: &Config) {
         println!("{}", "┌─────────────────────────────────────┐".green());
         println!("{}", "│  🔗 Provider: Anthropic (Default)   │".green());
         println!("{}", "└─────────────────────────────────────┘".green());
@@ -89,7 +101,7 @@ impl StatusDisplay {
         println!("{}", "  Base URL: api.anthropic.com (default)".cyan());
     }
 
-    fn show_custom_status(&self, config: &Config, base_url: &str) {
+    fn show_custom_status(&self, _config: &Config, base_url: &str) {
         println!("{}", "┌─────────────────────────────────────┐".green());
         println!("{}", "│  🔗 Provider: Custom                │".green());
         println!("{}", "└─────────────────────────────────────┘".green());
@@ -102,9 +114,10 @@ impl StatusDisplay {
     }
 
     fn show_other_env_vars(&self, config: &Config) {
-        let other_env_count = config.env
+        let other_env_count = config
+            .env
             .keys()
-            .filter(|key| !ProviderDetector::is_zai_key(key) && *key != "ANTHROPIC_BASE_URL")
+            .filter(|key| !ProviderDetector::is_glm_key(key) && *key != "ANTHROPIC_BASE_URL")
             .count();
 
         if other_env_count > 0 {
@@ -119,7 +132,11 @@ impl StatusDisplay {
             let backup = backup.unwrap();
             println!("  {}", "💾 Backup: Available (Anthropic)".cyan());
             if let Some(created_at) = backup.metadata.created_at {
-                println!("     {}{}", "Created: ".cyan(), created_at.format("%Y-%m-%d %H:%M:%S UTC"));
+                println!(
+                    "     {}{}",
+                    "Created: ".cyan(),
+                    created_at.format("%Y-%m-%d %H:%M:%S UTC")
+                );
             }
             // Show token type in backup
             if let Some(token) = backup.env.get("ANTHROPIC_AUTH_TOKEN") {
@@ -128,7 +145,7 @@ impl StatusDisplay {
                     crate::config::TokenType::Anthropic => {
                         println!("     {}", "Token: Web login token".cyan());
                     }
-                    crate::config::TokenType::ZAI => {
+                    crate::config::TokenType::GLM => {
                         println!("     {}", "Token: API key (unexpected)".yellow());
                     }
                     _ => {}

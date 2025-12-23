@@ -1,16 +1,13 @@
-use crate::config::{Config, BackupConfig, BackupMetadata, Provider, TokenType};
-use crate::utils::error::AppError;
+use crate::config::{BackupConfig, BackupMetadata, Config, Provider};
 use anyhow::{Context, Result};
-use colored::*;
+use chrono::Utc;
 use dirs::home_dir;
 use std::fs;
 use std::path::{Path, PathBuf};
-use chrono::Utc;
 
 pub struct ConfigManager {
     settings_file: PathBuf,
     backup_file: PathBuf,
-    config_dir: PathBuf,
     token_file: PathBuf,
 }
 
@@ -23,7 +20,6 @@ impl ConfigManager {
             settings_file: config_dir.join("settings.json"),
             backup_file: config_dir.join("settings.json.backup"),
             token_file: config_dir.join(".z_ai_token"),
-            config_dir,
         })
     }
 
@@ -35,8 +31,8 @@ impl ConfigManager {
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read config file: {}", path.display()))?;
 
-        let config: Config = serde_json::from_str(&content)
-            .with_context(|| "Failed to parse config file")?;
+        let config: Config =
+            serde_json::from_str(&content).with_context(|| "Failed to parse config file")?;
 
         Ok(config)
     }
@@ -51,8 +47,8 @@ impl ConfigManager {
                 .with_context(|| format!("Failed to create directory: {}", parent.display()))?;
         }
 
-        let content = serde_json::to_string_pretty(config)
-            .with_context(|| "Failed to serialize config")?;
+        let content =
+            serde_json::to_string_pretty(config).with_context(|| "Failed to serialize config")?;
 
         let temp_path = path.with_extension("tmp");
 
@@ -74,8 +70,8 @@ impl ConfigManager {
             return Ok((false, None));
         }
 
-        let content = fs::read_to_string(&self.backup_file)
-            .with_context(|| "Failed to read backup file")?;
+        let content =
+            fs::read_to_string(&self.backup_file).with_context(|| "Failed to read backup file")?;
 
         // Try parsing as new format first
         if let Ok(backup) = serde_json::from_str::<BackupConfig>(&content) {
@@ -127,8 +123,7 @@ impl ConfigManager {
             fs::create_dir_all(parent)?;
         }
 
-        fs::write(&self.token_file, token)
-            .context("Failed to save token")?;
+        fs::write(&self.token_file, token).context("Failed to save token")?;
 
         // Set restrictive permissions (600)
         #[cfg(unix)]
@@ -161,18 +156,9 @@ impl ConfigManager {
 
     pub fn remove_saved_token(&self) -> Result<()> {
         if self.token_file.exists() {
-            fs::remove_file(&self.token_file)
-                .context("Failed to remove saved token")?;
+            fs::remove_file(&self.token_file).context("Failed to remove saved token")?;
         }
         Ok(())
-    }
-
-    pub fn config_dir(&self) -> &Path {
-        &self.config_dir
-    }
-
-    pub fn settings_file(&self) -> &Path {
-        &self.settings_file
     }
 
     pub fn backup_file(&self) -> &Path {

@@ -1,4 +1,3 @@
-use crate::provider::detector::ProviderDetector;
 use anyhow::{Context, Result};
 use colored::*;
 use std::env;
@@ -6,17 +5,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub struct Installer {
-    config_dir: PathBuf,
-}
+pub struct Installer;
 
 impl Installer {
     pub fn new() -> Result<Self> {
-        let config_dir = dirs::home_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?
-            .join(".claude");
-
-        Ok(Self { config_dir })
+        Ok(Self)
     }
 
     pub fn install(&self) -> Result<()> {
@@ -24,11 +17,11 @@ impl Installer {
         println!();
 
         // Get current executable path
-        let exec_path = env::current_exe()
-            .context("Failed to get executable path")?;
+        let exec_path = env::current_exe().context("Failed to get executable path")?;
 
         // Resolve symlinks
-        let exec_path = exec_path.canonicalize()
+        let exec_path = exec_path
+            .canonicalize()
             .context("Failed to resolve executable path")?;
 
         // Install binary to /usr/local/bin
@@ -37,7 +30,10 @@ impl Installer {
         if exec_path != install_path {
             self.install_binary(&exec_path, &install_path)?;
         } else {
-            println!("{}", "📦 Binary already installed at /usr/local/bin/claude-switch".cyan());
+            println!(
+                "{}",
+                "📦 Binary already installed at /usr/local/bin/claude-switch".cyan()
+            );
         }
 
         // Install shell aliases
@@ -54,17 +50,18 @@ impl Installer {
     fn install_binary(&self, source_path: &Path, install_path: &Path) -> Result<()> {
         println!("{}", "📦 Installing binary to /usr/local/bin...".cyan());
 
-        let source_data = fs::read(source_path)
-            .context("Failed to read source binary")?;
+        let source_data = fs::read(source_path).context("Failed to read source binary")?;
 
         // Try direct write first
-        if let Err(e) = fs::write(install_path, &source_data) {
+        if let Err(_e) = fs::write(install_path, &source_data) {
             // Need sudo - use temp file approach
-            println!("{}", "⚠️  Need sudo permission to install to /usr/local/bin".yellow());
+            println!(
+                "{}",
+                "⚠️  Need sudo permission to install to /usr/local/bin".yellow()
+            );
 
             let temp_file = PathBuf::from("/tmp/claude-switch-install");
-            fs::write(&temp_file, &source_data)
-                .context("Failed to write temp file")?;
+            fs::write(&temp_file, &source_data).context("Failed to write temp file")?;
 
             let cmd = format!(
                 "sudo cp {} {} && sudo chmod +x {}",
@@ -98,7 +95,10 @@ impl Installer {
             fs::set_permissions(install_path, perms)?;
         }
 
-        println!("{}", "✅ Binary installed to /usr/local/bin/claude-switch".green());
+        println!(
+            "{}",
+            "✅ Binary installed to /usr/local/bin/claude-switch".green()
+        );
         Ok(())
     }
 
@@ -138,14 +138,22 @@ alias claude-status '{} --status'
 
         for shell_rc in &shell_configs {
             let is_fish = shell_rc.to_string_lossy().contains("fish");
-            let block = if is_fish { &fish_alias_block } else { &alias_block };
+            let block = if is_fish {
+                &fish_alias_block
+            } else {
+                &alias_block
+            };
 
             // Read existing shell config
             let content = fs::read_to_string(shell_rc).unwrap_or_default();
 
             // Check if aliases already exist
             if content.contains("Claude Code API Switcher") {
-                println!("{}{}", "⚠️  Aliases already exist in ".yellow(), shell_rc.display());
+                println!(
+                    "{}{}",
+                    "⚠️  Aliases already exist in ".yellow(),
+                    shell_rc.display()
+                );
                 continue;
             }
 

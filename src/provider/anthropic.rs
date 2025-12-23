@@ -1,6 +1,6 @@
-use crate::config::{Config, Provider};
-use crate::provider::detector::ProviderDetector;
 use crate::config::manager::ConfigManager;
+use crate::config::Config;
+use crate::provider::detector::ProviderDetector;
 use anyhow::{Context, Result};
 use colored::*;
 
@@ -17,7 +17,9 @@ impl AnthropicSwitcher {
         println!("{}", "🔄 Switching to Anthropic API...".green());
 
         // Load current config to check if already using Anthropic
-        let current_config = self.config_manager.load_current_config()
+        let current_config = self
+            .config_manager
+            .load_current_config()
             .context("Failed to load current config")?;
 
         if ProviderDetector::is_anthropic_config(&current_config) {
@@ -27,21 +29,30 @@ impl AnthropicSwitcher {
         }
 
         // Check if valid Anthropic backup exists
-        let (has_backup, backup) = self.config_manager.has_valid_anthropic_backup()
+        let (has_backup, backup) = self
+            .config_manager
+            .has_valid_anthropic_backup()
             .context("Failed to check for backup")?;
 
         if !has_backup || backup.is_none() {
             println!("{}", "❌ No valid Anthropic backup found!".red());
-            println!("{}", "⚠️  Cannot restore Anthropic configuration without backup.".yellow());
+            println!(
+                "{}",
+                "⚠️  Cannot restore Anthropic configuration without backup.".yellow()
+            );
             println!("{}", "   You may need to reconfigure Claude Code.".yellow());
             println!();
 
-            // Create empty config without Z.AI keys
+            // Create empty config without GLM keys
             let config = Config::default();
-            self.config_manager.save_current_config(&config)
+            self.config_manager
+                .save_current_config(&config)
                 .context("Failed to save empty config")?;
 
-            println!("{}", "⚠️  Created empty configuration (re-login required)".yellow());
+            println!(
+                "{}",
+                "⚠️  Created empty configuration (re-login required)".yellow()
+            );
             return Ok(());
         }
 
@@ -49,7 +60,8 @@ impl AnthropicSwitcher {
 
         // Show backup info
         if let Some(created_at) = backup.metadata.created_at {
-            println!("{}{}",
+            println!(
+                "{}{}",
                 "💾 Restoring from backup created at: ".cyan(),
                 created_at.format("%Y-%m-%d %H:%M:%S UTC")
             );
@@ -58,10 +70,11 @@ impl AnthropicSwitcher {
         // Create config from backup
         let mut restored_config = Config { env: backup.env };
 
-        // Remove any Z.AI specific keys that might be in backup
-        let keys_to_remove: Vec<String> = restored_config.env
+        // Remove any GLM specific keys that might be in backup
+        let keys_to_remove: Vec<String> = restored_config
+            .env
             .keys()
-            .filter(|key| ProviderDetector::is_zai_key(key))
+            .filter(|key| ProviderDetector::is_glm_key(key))
             .cloned()
             .collect();
 
@@ -69,10 +82,14 @@ impl AnthropicSwitcher {
             restored_config.env.remove(&key);
         }
 
-        self.config_manager.save_current_config(&restored_config)
+        self.config_manager
+            .save_current_config(&restored_config)
             .context("Failed to restore config")?;
 
-        println!("{}", "✅ Anthropic configuration restored from backup".green());
+        println!(
+            "{}",
+            "✅ Anthropic configuration restored from backup".green()
+        );
         Ok(())
     }
 }
