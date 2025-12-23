@@ -116,7 +116,7 @@ impl Installer {
 # Claude Code API Switcher
 alias claude-switch='{}'
 alias claude-anthropic='{} --anthropic'
-alias claude-z_ai='{} --z_ai'
+alias claude-glm='{} --glm'
 alias claude-status='{} --status'
 "#,
             exec_path_str, exec_path_str, exec_path_str, exec_path_str
@@ -128,7 +128,7 @@ alias claude-status='{} --status'
 # Claude Code API Switcher
 alias claude-switch '{}'
 alias claude-anthropic '{} --anthropic'
-alias claude-z_ai '{} --z_ai'
+alias claude-glm '{} --glm'
 alias claude-status '{} --status'
 "#,
             exec_path_str, exec_path_str, exec_path_str, exec_path_str
@@ -214,10 +214,10 @@ alias claude-status '{} --status'
     fn show_post_install_message(&self) {
         println!("{}", "Available commands after reload:".cyan());
         println!("  claude-switch --anthropic  # Use Anthropic Claude");
-        println!("  claude-switch --z_ai       # Use Z.AI GLM");
+        println!("  claude-switch --glm        # Use GLM");
         println!("  claude-switch --status     # Check current config");
         println!("  claude-anthropic           # Quick switch to Anthropic");
-        println!("  claude-z_ai                # Quick switch to Z.AI");
+        println!("  claude-glm                 # Quick switch to GLM");
         println!("  claude-status              # Quick status check");
         println!();
         println!("{}", "Reload your shell:".cyan());
